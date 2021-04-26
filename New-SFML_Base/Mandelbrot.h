@@ -19,8 +19,9 @@ private:
 
 
 public:
-	void compute_mandelbrot(float left, float right, float top, float bottom);
+	void ComputeMandelbrot(float left, float right,
+		float top, float bottom, float zoom = 1.0f);
 
-	void write_tga(const char* filename);
-	sf::Uint8* mandelPixels();
+	void WriteTga(const char* filename);
+	sf::Uint8* GetMandelPixels();
 };

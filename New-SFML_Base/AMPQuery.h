@@ -1,29 +1,25 @@
 #pragma once
 
-#include <chrono>
-#include <iostream>
+#include "Mandelbrot.h"
+
 #include <iomanip>
-
-#include <amp.h>
-#include <time.h>
-
 #include <string>
 #include <numeric>
+#include <time.h>
 
-// Need to access the concurrency libraries 
+// Need to access the concurrency libraries.
 using namespace concurrency;
 
 class AMPQuery
 {
 private:
 	// List and select the accelerator to use.
-	void list_accelerators();
-	void report_accelerator(const accelerator a);
+	void ListAccelerators();
+	void ReportAccelerator(const accelerator a);
 
 public:
 	// Query if AMP accelerator exists on hardware.
-	void query_AMP_support();
-
-	//...
-	void regular_non(); // temp.
+	void QueryAMPSupport();
 };
+
+// CITE : SOURCE LAB FOR QUERY AND AUTHOR.

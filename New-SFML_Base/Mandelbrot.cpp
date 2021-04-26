@@ -1,5 +1,4 @@
 #include "Mandelbrot.h"
-#include "OwnComplex.h"
 
 // Import things we need from the standard library
 using std::cout;
@@ -72,7 +71,7 @@ complex_c c_mul(complex_c c1, complex_c c2) restrict(cpu, amp) {
 
 // Write the image to a TGA file with the given name.
 // Format specification: http://www.gamers.org/dEngine/quake3/TGA.txt
-void Mandelbrot::write_tga(const char* filename)
+void Mandelbrot::WriteTga(const char* filename)
 {
 	ofstream outfile(filename, ofstream::binary);
 
@@ -112,7 +111,7 @@ void Mandelbrot::write_tga(const char* filename)
 	}
 }
 
-sf::Uint8* Mandelbrot::mandelPixels()
+sf::Uint8* Mandelbrot::GetMandelPixels()
 {
 	// Any way to parallelise?...
 
@@ -156,7 +155,7 @@ sf::Uint8* Mandelbrot::mandelPixels()
 
 // Render the Mandelbrot set into the image array.
 // The parameters specify the region on the complex plane to plot.
-void Mandelbrot::compute_mandelbrot(float left, float right, float top, float bottom)
+void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bottom, float zoom)
 {
 	// Local pointer to the globally declared image data.
 	uint32_t* pImage = &(image[0][0]);
@@ -179,8 +178,8 @@ void Mandelbrot::compute_mandelbrot(float left, float right, float top, float bo
 		// Work out the point in the complex plane that
 		// corresponds to this pixel in the output image.
 		complex_c c;
-		c.x = left + (x * (right - left) / WIDTH);
-		c.y = top + (y * (bottom - top) / HEIGHT);
+		c.x = (left + (x * (right - left) / WIDTH)) / zoom;
+		c.y = (top + (y * (bottom - top) / HEIGHT)) / zoom;
 
 		/*OwnComplex c(left + (x * (right - left) / WIDTH),
 			top + (y * (bottom - top) / HEIGHT));*/

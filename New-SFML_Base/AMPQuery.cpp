@@ -1,12 +1,11 @@
 #include "AMPQuery.h"
 
-
-// Import things we need from the standard library
+// Using 'iostream' functionality.
 using std::cout;
 using std::endl;
 
 
-void AMPQuery::report_accelerator(const accelerator a)
+void AMPQuery::ReportAccelerator(const accelerator a)
 {
 	const std::wstring bs[2] = { L"false", L"true" };
 	std::wcout << ": " << a.description << " "
@@ -18,18 +17,18 @@ void AMPQuery::report_accelerator(const accelerator a)
 		<< endl << "       supports_double_precision         = " << bs[a.supports_double_precision]
 		<< endl << "       supports_limited_double_precision = " << bs[a.supports_limited_double_precision]
 		<< endl;
-}
+} // report_accelerator
 
-void AMPQuery::list_accelerators()
+void AMPQuery::ListAccelerators()
 {
-	//get all accelerators available to us and store in a vector so we can extract details
+	// Get all available accelerators and store in a vector for access to details.
 	std::vector<accelerator> accls = accelerator::get_all();
 
-	// iterates over all accelerators and print characteristics
+	// Iterates over all accelerators and prints characteristics.
 	for (unsigned i = 0; i < accls.size(); i++)
 	{
 		accelerator a = accls[i];
-		report_accelerator(a);
+		ReportAccelerator(a);
 		//if ((a.dedicated_memory > 0) & (a.dedicated_memory < 0.5*(1024.0f * 1024.0f)))
 		//accelerator::set_default(a.device_path);
 	}
@@ -41,7 +40,7 @@ void AMPQuery::list_accelerators()
 } // list_accelerators
 
 
-void AMPQuery::query_AMP_support()
+void AMPQuery::QueryAMPSupport()
 {
 	std::vector<accelerator> accls = accelerator::get_all();
 	if (accls.empty())
@@ -51,22 +50,6 @@ void AMPQuery::query_AMP_support()
 	else
 	{
 		cout << "Accelerators found that are compatible with C++ AMP" << std::endl;
-		list_accelerators();
+		ListAccelerators();
 	}
 } // query_AMP_support
-
-void AMPQuery::regular_non()
-{
-	std::cout << "work";
-
-	/*// Local pointer to the globally declared image data.
-	uint32_t* pImage = &(image[0][0]);
-
-	// array_view object will permit the image data to be available
-	// on the CPU and GPU when needed.
-	array_view<uint32_t, 2> a(HEIGHT, WIDTH, pImage);
-
-	// Don't need to transfer data from CPU to GPU as all
-	// calculations are done on the GPU.
-	a.discard_data(); // a.discard(); ??*/
-}

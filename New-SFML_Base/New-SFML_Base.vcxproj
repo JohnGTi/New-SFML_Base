@@ -154,6 +154,7 @@
     <ClCompile Include="Framework\SoundObject.cpp" />
     <ClCompile Include="Framework\TileMap.cpp" />
     <ClCompile Include="Framework\VectorHelper.cpp" />
+    <ClCompile Include="InteractMandel.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mandelbrot.cpp" />
     <ClCompile Include="OwnComplex.cpp" />
@@ -171,6 +172,7 @@
     <ClInclude Include="Framework\SoundObject.h" />
     <ClInclude Include="Framework\TileMap.h" />
     <ClInclude Include="Framework\VectorHelper.h" />
+    <ClInclude Include="InteractMandel.h" />
     <ClInclude Include="Mandelbrot.h" />
     <ClInclude Include="OwnComplex.h" />
   </ItemGroup>
