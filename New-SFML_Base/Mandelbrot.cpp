@@ -1,4 +1,5 @@
 #include "Mandelbrot.h"
+#include "OwnComplex.h"
 
 // Import things we need from the standard library
 using std::cout;
@@ -20,10 +21,6 @@ const int MAX_ITERATIONS = 500;
 // The image data.
 // Each pixel is represented as 0xRRGGBB.
 uint32_t image[HEIGHT][WIDTH];
-
-sf::Uint8* pixels = new sf::Uint8[HEIGHT * WIDTH * 4];
-//sf::Uint8 pixels[HEIGHT * WIDTH * 4];
-// ^- Remember to clean up.
 
 // using our own Complex number structure and definitions as the Complex type is not available
 // in the Concurrency namespace.
@@ -113,7 +110,9 @@ void Mandelbrot::WriteTga(const char* filename)
 
 sf::Uint8* Mandelbrot::GetMandelPixels()
 {
-	// Any way to parallelise?...
+	//
+	// ^- Remember to clean up.
+	// PARALLELISE.
 
 	// An independant counter for pixel;
 	int pIndex = 0;
@@ -168,58 +167,61 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 	// calculations are done on the GPU.
 	a.discard_data();
 
-	parallel_for_each(a.extent, [=](index<2> idx) restrict(amp) {
-		// Compute Mandelbrot here i.e. Mandelbrot kernel/shader...
-		
-		// USE THREAD ID/INDEX TO MAP INTO THE COMPLEX PLANE.
-		int y = idx[0];
-		int x = idx[1];
+	// It is wise to use exception handling here - AMP can fail for many reasons
+	// and it useful to know why (e.g. using double precision when there is limited or no support).
+	try
+	{
+		parallel_for_each(a.extent, [=](index<2> idx) restrict(amp) {
+			// Compute Mandelbrot here i.e. Mandelbrot kernel/shader...
 
-		// Work out the point in the complex plane that
-		// corresponds to this pixel in the output image.
-		complex_c c;
-		c.x = (left + (x * (right - left) / WIDTH)) / zoom;
-		c.y = (top + (y * (bottom - top) / HEIGHT)) / zoom;
+			// USE THREAD ID/INDEX TO MAP INTO THE COMPLEX PLANE.
+			unsigned int y = idx[0];
+			unsigned int x = idx[1];
 
-		/*OwnComplex c(left + (x * (right - left) / WIDTH),
-			top + (y * (bottom - top) / HEIGHT));*/
+			// Work out the point in the complex plane that
+			// corresponds to this pixel in the output image.
+			OwnComplex c;
+			c.SetXY(
+				(left + (x * (right - left) / WIDTH)) / zoom,
+				(top + (y * (bottom - top) / HEIGHT)) / zoom
+			);
 
-		// Start off z at (0, 0).
-		complex_c z;
-		z.x = 0.0f;
-		z.y = 0.0f;
+			// Start off z at (0, 0).
+			OwnComplex z;
 
-		//OwnComplex z; // OwnComplex z(); // ?
+			// Iterate z = z^2 + c until z moves more than 2 units
+			// away from (0, 0), or we've iterated too many times.
+			unsigned int iterations = 0;
+			while (z.Absolute() < 2.0 && iterations < MAX_ITERATIONS)
+			{
+				//z = (z * z) + c;
+				z.Multiply(z);
+				z.Add(c);
 
-		// Iterate z = z^2 + c until z moves more than 2 units
-		// away from (0, 0), or we've iterated too many times.
-		int iterations = 0;
-		while (c_abs(z) < 2.0 && iterations < MAX_ITERATIONS) // z.c_abs()
-		{
-			//z = (z * z) + c;
-			z = c_add(c_mul(z, z), c);
+				++iterations;
+			}
 
-			/*z.c_mul(z);
-			z.c_add(c);*/
+			if (iterations == MAX_ITERATIONS)
+			{
+				// z didn't escape from the circle.
+				// This point is in the Mandelbrot set.
+				a[idx] = 0x000000; // black
+			}
+			else
+			{
+				// z escaped within less than MAX_ITERATIONS
+				// iterations. This point isn't in the set.
 
-			++iterations;
-		}
-
-		if (iterations == MAX_ITERATIONS)
-		{
-			// z didn't escape from the circle.
-			// This point is in the Mandelbrot set.
-			a[idx] = 0x000000; // black
-		}
-		else
-		{
-			// z escaped within less than MAX_ITERATIONS
-			// iterations. This point isn't in the set.
-
-			// Make up a greyscale value performing bitwise operations on 'iterations.'
-			a[idx] = ((iterations << 16) | (iterations << 8) | iterations);
-		}
-	});
+				// Make up a greyscale value performing bitwise operations on 'iterations.'
+				a[idx] = ((iterations << 16) | (iterations << 8) | iterations);
+			}
+		});
+		a.synchronize();
+	}
+	catch (const Concurrency::runtime_exception& ex)
+	{
+		MessageBoxA(NULL, ex.what(), "Error", MB_ICONERROR);
+	}
 }
 
 /*// Compute Mandelbrot here i.e. Mandelbrot kernel/shader...

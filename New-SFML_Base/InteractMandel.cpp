@@ -57,6 +57,20 @@ void InteractMandel::HandleInput(float frame_time)
 	} else if (mouseDrag) {
 		zoomWindow.setSize(sf::Vector2f(0.0f, 0.0f));
 
+		left = left * (960 - zoomPosBegin.x) / 960;
+		right = right * (input->getMouseX() - 960) / 960;
+		top = top * (600 - zoomPosBegin.y) / 600;
+		bottom = bottom * (input->getMouseY() - 600) / 600;
+		/*float halfRect = (input->getMouseX() - zoomPosBegin.x) / 2;
+		left = halfRect / 960 * left;*/
+
+		/*left = left * (1920 - zoomPosBegin.x) / 1920;
+		right = -0.734975;
+		/*top = 0.134488;
+		bottom = 0.118378;*/
+		mandel.ComputeMandelbrot(left, right, top, bottom);
+
+
 		mouseDrag = false;
 	}
 
@@ -154,8 +168,8 @@ void InteractMandel::Render()
 {
 	// Render Mandelbrot (and other) graphic(s).
 	//window->clear();
-	window->draw(mandelSprite);
 
+	window->draw(mandelSprite);
 	window->draw(zoomWindow);
 
 	window->display();
