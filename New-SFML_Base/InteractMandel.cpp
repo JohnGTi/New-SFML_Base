@@ -3,10 +3,12 @@
 InteractMandel::InteractMandel(sf::RenderWindow* hwnd, Input* in)
 	: mouseDrag(false),
 	left(-2.0f),
-	right(1.0f),
+	right(2.0f),
 	top(1.125f),
 	bottom(-1.125f),
-	zoom(1.0f)
+	zoom(1.0f),
+	detX(0.0f),
+	detY(0.0f)
 {
 	window = hwnd;
 	input = in;
@@ -24,6 +26,8 @@ InteractMandel::InteractMandel(sf::RenderWindow* hwnd, Input* in)
 	/////////////////////////////////////////////////////
 	/*left = -0.751085; right = -0.734975;
 	top = 0.134488; bottom = 0.118378;*/
+	/*left = -2.0f; right = 2.0f;
+	top = 2.0f; bottom = -2.0f;*/
 }
 
 void InteractMandel::HandleInput(float frame_time)
@@ -55,35 +59,22 @@ void InteractMandel::HandleInput(float frame_time)
 		zoomWindow.setSize(zoomArea);
 
 	} else if (mouseDrag) {
-		zoomWindow.setSize(sf::Vector2f(0.0f, 0.0f));
-
 		left = left * (960 - zoomPosBegin.x) / 960;
-		right = right * (input->getMouseX() - 960) / 960;
 		top = top * (600 - zoomPosBegin.y) / 600;
-		bottom = bottom * (input->getMouseY() - 600) / 600;
-		/*float halfRect = (input->getMouseX() - zoomPosBegin.x) / 2;
-		left = halfRect / 960 * left;*/
 
-		/*left = left * (1920 - zoomPosBegin.x) / 1920;
-		right = -0.734975;
-		/*top = 0.134488;
-		bottom = 0.118378;*/
-		mandel.ComputeMandelbrot(left, right, top, bottom);
+		MaintainAspectRatio();
 
+		/*right = right * (input->getMouseX() - 960) / 960;
+		bottom = bottom * (input->getMouseY() - 600) / 600;*/
+		right = right * (detX - 960) / 960;
+		bottom = bottom * (detY - 600) / 600;
+		
+
+		zoomWindow.setSize(sf::Vector2f(0.0f, 0.0f));
 
 		mouseDrag = false;
 	}
 
-	/*if (mouseDrag) {
-		if (!input->isLeftMouseDown()) {
-			// Resolve : mouse released.
-			mouseDrag = false;
-		}
-		// Resolve : drag in effect.
-
-		std::cout << " IS DOWN.";
-	}
-	std::cout << std::endl;*/
 	/*input->setLeftMouse(Input::MouseState::UP);
 	zoomPosBegin = sf::Vector2f(0.0f, 0.0f);
 	std::cout << "mouse : " << input->getMouseX() << ", "
@@ -92,6 +83,27 @@ void InteractMandel::HandleInput(float frame_time)
 	/*std::cout << "mouse : " << zoomPosBegin.x << ", "
 		<< zoomPosBegin.y << std::endl;
 	std::cout << "Release.\n";*/
+	/*std::cout << "initX " << zoomPosBegin.x << " initY " << zoomPosBegin.y << "; endX " << input->getMouseX() << ", endY " << input->getMouseY() << ";\n";
+		std::cout << "left " << left << ", top " << top << ", right " << right << ", bottom " << bottom << ";\n";*/
+}
+
+void InteractMandel::MaintainAspectRatio()
+{
+	float rectH = input->getMouseY() - zoomPosBegin.y;
+	float rectW = input->getMouseX() - zoomPosBegin.x;
+
+	if (rectH > rectW) {
+		detX = input->getMouseX();
+
+		float newH = rectW * ((float)1200 / (float)1920);
+		detY = newH + zoomPosBegin.y;
+	}
+	else {
+		float newW = rectH * ((float)1920 / (float)1200);
+		detX = newW + zoomPosBegin.x;
+
+		detY = input->getMouseY();
+	}
 }
 
 void InteractMandel::WASDTraversePlane()
@@ -130,7 +142,7 @@ void InteractMandel::ERZoomReset()
 	if (input->isKeyDown(sf::Keyboard::Z)) {
 		zoom = 1.0f;
 
-		left = -2.0f; right = 1.0f;
+		left = -2.0f; right = 2.0f;
 		top = 1.125; bottom = -1.125;
 	}
 

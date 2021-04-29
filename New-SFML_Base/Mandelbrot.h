@@ -17,7 +17,7 @@ class Mandelbrot
 {
 private:
 	//sf::Uint8* pixels = new sf::Uint8[1200 * 1920 * 4];
-	uint8_t* pixels = new sf::Uint8[1200 * 1920 * 4];
+	uint8_t* pixels = new uint8_t[1200 * 1920 * 4];
 
 	/// ^^^ - Uint8* CAN point to a uint8_t (^^ALSO CLEAN UP - *n e w*).
 

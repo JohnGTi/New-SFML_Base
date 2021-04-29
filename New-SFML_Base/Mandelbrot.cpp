@@ -2,9 +2,14 @@
 #include "OwnComplex.h"
 
 // Import things we need from the standard library
+using std::chrono::duration_cast;
+using std::chrono::nanoseconds;
 using std::cout;
 using std::endl;
 using std::ofstream;
+
+// Define the alias "the_amp_clock" for the clock type we're going to use.
+typedef std::chrono::steady_clock the_amp_clock;
 
 // Need to access the concurrency libraries 
 using namespace concurrency;
@@ -111,7 +116,7 @@ void Mandelbrot::WriteTga(const char* filename)
 sf::Uint8* Mandelbrot::GetMandelPixels()
 {
 	//
-	// ^- Remember to clean up.
+	// ^- Remember to CLEAN UP.
 	// PARALLELISE.
 
 	// An independant counter for pixel;
@@ -137,19 +142,10 @@ sf::Uint8* Mandelbrot::GetMandelPixels()
 			pIndex += 4;
 		}
 	}
+	/*sf::Uint8* sfpixels = pixels;
+	return sfpixels;*/
 
 	return pixels;
-
-	// Consider if a parallel_for_each will work with an
-	// array_view created by a sf::Uint8 image[HEIGHT * WIDTH * 4];
-
-	// I believe the parallel_for_each will cooperate with sf.
-	// sf::Uint32 behaved, if I recall correctly.
-
-	/*		***		*/
-
-	/// ^^- a temporary solution? Create a working parallel_for_each
-	/// using an array_view created by a sf::Uint8 image[HEIGHT * WIDTH * 4];
 }
 
 // Render the Mandelbrot set into the image array.
@@ -161,11 +157,15 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 
 	// array_view object will permit the image data to be available
 	// on the CPU and GPU when needed.
-	array_view<uint32_t, 2> a(HEIGHT, WIDTH, pImage);
+	extent<2> aex(HEIGHT, WIDTH);
+	array_view<uint32_t, 2> a(aex, pImage);
 
 	// Don't need to transfer data from CPU to GPU as all
 	// calculations are done on the GPU.
 	a.discard_data();
+
+	// start clock for GPU version after array allocation
+	//the_amp_clock::time_point start = the_amp_clock::now();
 
 	// It is wise to use exception handling here - AMP can fail for many reasons
 	// and it useful to know why (e.g. using double precision when there is limited or no support).
@@ -222,6 +222,11 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 	{
 		MessageBoxA(NULL, ex.what(), "Error", MB_ICONERROR);
 	}
+	/*// Stop timing
+	the_amp_clock::time_point end = the_amp_clock::now();
+	// Compute the difference between the two times in milliseconds
+	auto time_taken = duration_cast<nanoseconds>(end - start).count();
+	std::cout << "AMP, non tiled, takes : " << time_taken << " ms." << endl;*/
 }
 
 /*// Compute Mandelbrot here i.e. Mandelbrot kernel/shader...
@@ -252,3 +257,101 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 
 			++iterations;
 		}*/
+
+/*Consider if a parallel_for_each will work with an
+array_view created by a sf::Uint8 image[HEIGHT * WIDTH * 4];
+
+I believe the parallel_for_each will cooperate with sf.
+sf::Uint32 behaved, if I recall correctly.
+
+^^- a temporary solution? Create a working parallel_for_each
+using an array_view created by a sf::Uint8 image[HEIGHT * WIDTH * 4];*/
+
+/*extent<1> ye(HEIGHT * WIDTH * 4);
+	uint8_t* sfpImg = &(pixels[0]);
+	array_view<uint8_t, 1> a(ye, sfpImg);*/
+
+/*extent<1> e(SIZE);
+		uint8_t* sfpImg = &(pixels[0]);
+		array_view<uint8_t, 1> avp(e, sfpImg);*/	
+
+// TILING AND CLOCK :
+/*
+// Define the tile size.
+const int tileSize = 1024;
+
+// start clock for GPU version after array allocation
+//the_amp_clock::time_point start = the_amp_clock::now();
+
+// It is wise to use exception handling here - AMP can fail for many reasons
+// and it useful to know why (e.g. using double precision when there is limited or no support).
+try
+{
+	parallel_for_each(a.extent.tile<tileSize>(), [=](tiled_index<tileSize> t_idx) restrict(amp) {
+		// Compute Mandelbrot here i.e. Mandelbrot kernel/shader...
+
+		// USE THREAD ID/INDEX TO MAP INTO THE COMPLEX PLANE.
+		unsigned int y = t_idx.global[0];
+		unsigned int x = t_idx.global[1];
+
+		tile_static uint32_t pixelValues[HEIGHT][WIDTH];
+		pixelValues[t_idx.local[0]][t_idx.local[1]] = a[t_idx];
+
+		t_idx.barrier.wait();
+
+		// Work out the point in the complex plane that
+		// corresponds to this pixel in the output image.
+		OwnComplex c;
+		c.SetXY(
+			(left + (x * (right - left) / WIDTH)) / zoom,
+			(top + (y * (bottom - top) / HEIGHT)) / zoom
+		);
+
+		// Start off z at (0, 0).
+		OwnComplex z;
+
+		// Iterate z = z^2 + c until z moves more than 2 units
+		// away from (0, 0), or we've iterated too many times.
+		unsigned int iterations = 0;
+		while (z.Absolute() < 2.0 && iterations < MAX_ITERATIONS)
+		{
+			//z = (z * z) + c;
+			z.Multiply(z);
+			z.Add(c);
+
+			++iterations;
+		}
+
+		if (iterations == MAX_ITERATIONS)
+		{
+			// z didn't escape from the circle.
+			// This point is in the Mandelbrot set.
+			//a[t_idx] = 0x000000; // black
+
+			pixelValues[t_idx.local[0]][t_idx.local[1]] = 0x000000; // black
+			// [y][x]
+		}
+		else
+		{
+			// z escaped within less than MAX_ITERATIONS
+			// iterations. This point isn't in the set.
+
+			// Make up a greyscale value performing bitwise operations on 'iterations.'
+			//a[t_idx] = ((iterations << 16) | (iterations << 8) | iterations);
+
+			pixelValues[t_idx.local[0]][t_idx.local[1]] =
+				((iterations << 16) | (iterations << 8) | iterations);
+		}
+	});
+	a.synchronize();
+}
+catch (const Concurrency::runtime_exception& ex)
+{
+	MessageBoxA(NULL, ex.what(), "Error", MB_ICONERROR);
+}
+// Stop timing
+the_amp_clock::time_point end = the_amp_clock::now();
+// Compute the difference between the two times in milliseconds
+auto time_taken = duration_cast<nanoseconds>(end - start).count();
+std::cout << "AMP, non tiled, takes : " << time_taken << " ms." << endl;
+}*/

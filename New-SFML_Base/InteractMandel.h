@@ -20,10 +20,12 @@ private:
 
 	void WASDTraversePlane();
 	void ERZoomReset();
+	void MaintainAspectRatio();
 
 	bool mouseDrag;
 	float left, right, zoom;
 	float top, bottom;
+	float detX, detY;
 
 public:
 	InteractMandel(sf::RenderWindow* hwnd, Input* in);
