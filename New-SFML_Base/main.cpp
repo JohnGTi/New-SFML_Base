@@ -49,7 +49,7 @@ void windowProcess(sf::RenderWindow* window, Input* input) {
 
 int main() {
 	//Create the window
-	sf::RenderWindow window(sf::VideoMode(1920, 1200), "MandelApp");
+	sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "MandelApp"); // 1920, 1200
 
 	// Initialise input object.
 	Input input;

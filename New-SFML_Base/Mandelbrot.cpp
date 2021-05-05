@@ -15,8 +15,8 @@ typedef std::chrono::steady_clock the_amp_clock;
 using namespace concurrency;
 
 // The size of the image to generate.
-const int WIDTH = 1920;
-const int HEIGHT = 1200;
+//const int WIDTH = 1024; // 1920
+//const int HEIGHT = 1024; // 1200
 
 // The number of times to iterate before we assume that a point isn't in the
 // Mandelbrot set.
@@ -155,6 +155,14 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 	// Local pointer to the globally declared image data.
 	uint32_t* pImage = &(image[0][0]);
 
+	uint32_t ipTemp = 0xff0000;
+	std::cout << "ipTemp = " << ipTemp << ";\n";
+	float fpTemp = 0.000904706;
+	float pixelBlur = ipTemp * fpTemp;
+	std::cout << "0xff0000 * 0.000904706 = " << pixelBlur << ";\n";
+	uint32_t finTemp = pixelBlur;
+	std::cout << "finTemp = pixelBlur... " << finTemp << ";\n";
+
 	// array_view object will permit the image data to be available
 	// on the CPU and GPU when needed.
 	extent<2> aex(HEIGHT, WIDTH);
@@ -164,19 +172,22 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 	// calculations are done on the GPU.
 	a.discard_data();
 
+	// Define the tile size.
+	const int TS = 8; // 32
+
 	// start clock for GPU version after array allocation
-	//the_amp_clock::time_point start = the_amp_clock::now();
+	the_amp_clock::time_point start = the_amp_clock::now();
 
 	// It is wise to use exception handling here - AMP can fail for many reasons
 	// and it useful to know why (e.g. using double precision when there is limited or no support).
 	try
 	{
-		parallel_for_each(a.extent, [=](index<2> idx) restrict(amp) {
+		parallel_for_each(a.extent.tile<TS, TS>(), [=](tiled_index<TS, TS> t_idx) restrict(amp) {
 			// Compute Mandelbrot here i.e. Mandelbrot kernel/shader...
 
 			// USE THREAD ID/INDEX TO MAP INTO THE COMPLEX PLANE.
-			unsigned int y = idx[0];
-			unsigned int x = idx[1];
+			unsigned int y = t_idx.global[0];
+			unsigned int x = t_idx.global[1];
 
 			// Work out the point in the complex plane that
 			// corresponds to this pixel in the output image.
@@ -205,7 +216,7 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 			{
 				// z didn't escape from the circle.
 				// This point is in the Mandelbrot set.
-				a[idx] = 0x000000; // black
+				a[t_idx] = 0x000000; // black
 			}
 			else
 			{
@@ -213,7 +224,7 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 				// iterations. This point isn't in the set.
 
 				// Make up a greyscale value performing bitwise operations on 'iterations.'
-				a[idx] = ((iterations << 16) | (iterations << 8) | iterations);
+				a[t_idx] = ((iterations << 16) | (iterations << 8) | iterations);
 			}
 		});
 		a.synchronize();
@@ -222,11 +233,11 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 	{
 		MessageBoxA(NULL, ex.what(), "Error", MB_ICONERROR);
 	}
-	/*// Stop timing
+	// Stop timing
 	the_amp_clock::time_point end = the_amp_clock::now();
 	// Compute the difference between the two times in milliseconds
 	auto time_taken = duration_cast<nanoseconds>(end - start).count();
-	std::cout << "AMP, non tiled, takes : " << time_taken << " ms." << endl;*/
+	//std::cout << "AMP, non tiled, takes : " << time_taken << " ns." << endl;
 }
 
 /*// Compute Mandelbrot here i.e. Mandelbrot kernel/shader...

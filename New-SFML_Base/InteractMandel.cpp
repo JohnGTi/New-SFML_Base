@@ -14,7 +14,7 @@ InteractMandel::InteractMandel(sf::RenderWindow* hwnd, Input* in)
 	input = in;
 
 	// Create an empty texture.
-	if (!mandelTexture.create(1920, 1200)) {
+	if (!mandelTexture.create(WIDTH, HEIGHT)) { // 1920, 1200
 		std::cout << "Failed to create mandelTexture.";
 		abort();
 	}
@@ -59,15 +59,15 @@ void InteractMandel::HandleInput(float frame_time)
 		zoomWindow.setSize(zoomArea);
 
 	} else if (mouseDrag) {
-		left = left * (960 - zoomPosBegin.x) / 960;
-		top = top * (600 - zoomPosBegin.y) / 600;
+		left = left * ((WIDTH / 2) - zoomPosBegin.x) / (WIDTH / 2); // left = left * (960 - zoomPosBegin.x) / 960;
+		top = top * ((HEIGHT / 2) - zoomPosBegin.y) / (HEIGHT / 2); // top = top * (600 - zoomPosBegin.y) / 600;
 
 		MaintainAspectRatio();
 
 		/*right = right * (input->getMouseX() - 960) / 960;
 		bottom = bottom * (input->getMouseY() - 600) / 600;*/
-		right = right * (detX - 960) / 960;
-		bottom = bottom * (detY - 600) / 600;
+		right = right * (detX - (WIDTH / 2)) / (WIDTH / 2); // right = right * (detX - 960) / 960;
+		bottom = bottom * (detY - (HEIGHT / 2)) / (HEIGHT / 2); // bottom = bottom * (detY - 600) / 600;
 		
 
 		zoomWindow.setSize(sf::Vector2f(0.0f, 0.0f));
@@ -95,11 +95,11 @@ void InteractMandel::MaintainAspectRatio()
 	if (rectH > rectW) {
 		detX = input->getMouseX();
 
-		float newH = rectW * ((float)1200 / (float)1920);
+		float newH = rectW * ((float)HEIGHT / (float)WIDTH);
 		detY = newH + zoomPosBegin.y;
 	}
 	else {
-		float newW = rectH * ((float)1920 / (float)1200);
+		float newW = rectH * ((float)WIDTH / (float)HEIGHT);
 		detX = newW + zoomPosBegin.x;
 
 		detY = input->getMouseY();
