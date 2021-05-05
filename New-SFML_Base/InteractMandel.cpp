@@ -1,14 +1,13 @@
 #include "InteractMandel.h"
 
 InteractMandel::InteractMandel(sf::RenderWindow* hwnd, Input* in)
-	: mouseDrag(false),
+	: leftMouseDrag(false),
+	rightMouseDrag(false),
 	left(-2.0f),
 	right(2.0f),
 	top(1.125f),
 	bottom(-1.125f),
-	zoom(1.0f),
-	detX(0.0f),
-	detY(0.0f)
+	scale(1.0f)
 {
 	window = hwnd;
 	input = in;
@@ -23,11 +22,6 @@ InteractMandel::InteractMandel(sf::RenderWindow* hwnd, Input* in)
 	zoomWindow.setFillColor(sf::Color::Transparent);
 	zoomWindow.setOutlineColor(sf::Color::White);
 	zoomWindow.setOutlineThickness(-3.0f);
-	/////////////////////////////////////////////////////
-	/*left = -0.751085; right = -0.734975;
-	top = 0.134488; bottom = 0.118378;*/
-	/*left = -2.0f; right = 2.0f;
-	top = 2.0f; bottom = -2.0f;*/
 }
 
 void InteractMandel::HandleInput(float frame_time)
@@ -41,15 +35,45 @@ void InteractMandel::HandleInput(float frame_time)
 		mandel.WriteTga("output.tga");
 	}
 
-	WASDTraversePlane();
 	ERZoomReset();
+	ComputeZoomWindow();
+	DragViewWindow();
+}
+
+void InteractMandel::ERZoomReset()
+{
+	// Reset view region to full, upon Z key pressed.
+	if (input->isKeyDown(sf::Keyboard::Z)) {
+		scale = 1.0f;
+
+		left = -2.0f; right = 2.0f;
+		top = 1.125; bottom = -1.125;
+	}
+
+	/*if (input->isKeyDown(sf::Keyboard::R)) {
+		zoom += 0.010001f;
+	}
+	if (input->isKeyDown(sf::Keyboard::E)) {
+		zoom -= 0.010001f;
+	}
+	// Rudimentary attempt at zoom in/out.
+	// I kept the ER function name as it sounded really neato.*/
+}
+
+void InteractMandel::ComputeZoomWindow()
+{
+	// Initial left mouse click will store mouse position
+	// and switch a boolean indicating that the mouse is being dragged.
+
+	// The zoom window will be updated with the initial and
+	// and current mouse positions for the duration of the drag.
 
 	if (input->isLeftMouseDown()) {
-		if (!mouseDrag) {
+		if (!leftMouseDrag) {
 			zoomPosBegin.x = input->getMouseX();
 			zoomPosBegin.y = input->getMouseY();
 
-			mouseDrag = true;
+			leftMouseDrag = true;
 		}
 		zoomWindow.setPosition(zoomPosBegin);
 
@@ -58,112 +82,71 @@ void InteractMandel::HandleInput(float frame_time)
 
 		zoomWindow.setSize(zoomArea);
 
-	} else if (mouseDrag) {
-		left = left * ((WIDTH / 2) - zoomPosBegin.x) / (WIDTH / 2); // left = left * (960 - zoomPosBegin.x) / 960;
-		top = top * ((HEIGHT / 2) - zoomPosBegin.y) / (HEIGHT / 2); // top = top * (600 - zoomPosBegin.y) / 600;
+	}
+	else if (leftMouseDrag) {
+		// Calculate centre point of the drawn rectangle.
+		int centreX = ((input->getMouseX() - zoomPosBegin.x) / 2 + zoomPosBegin.x);
+		int centreY = ((input->getMouseY() - zoomPosBegin.y) / 2 + zoomPosBegin.y);
 
-		MaintainAspectRatio();
-
-		/*right = right * (input->getMouseX() - 960) / 960;
-		bottom = bottom * (input->getMouseY() - 600) / 600;*/
-		right = right * (detX - (WIDTH / 2)) / (WIDTH / 2); // right = right * (detX - 960) / 960;
-		bottom = bottom * (detY - (HEIGHT / 2)) / (HEIGHT / 2); // bottom = bottom * (detY - 600) / 600;
-		
-
+		TransformImage(centreX, centreY, 5.0f);
 		zoomWindow.setSize(sf::Vector2f(0.0f, 0.0f));
 
-		mouseDrag = false;
-	}
-
-	/*input->setLeftMouse(Input::MouseState::UP);
-	zoomPosBegin = sf::Vector2f(0.0f, 0.0f);
-	std::cout << "mouse : " << input->getMouseX() << ", "
-			<< input->getMouseY() << std::endl;
-	std::cout << "IS DOWN.\n";*/
-	/*std::cout << "mouse : " << zoomPosBegin.x << ", "
-		<< zoomPosBegin.y << std::endl;
-	std::cout << "Release.\n";*/
-	/*std::cout << "initX " << zoomPosBegin.x << " initY " << zoomPosBegin.y << "; endX " << input->getMouseX() << ", endY " << input->getMouseY() << ";\n";
-		std::cout << "left " << left << ", top " << top << ", right " << right << ", bottom " << bottom << ";\n";*/
-}
-
-void InteractMandel::MaintainAspectRatio()
-{
-	float rectH = input->getMouseY() - zoomPosBegin.y;
-	float rectW = input->getMouseX() - zoomPosBegin.x;
-
-	if (rectH > rectW) {
-		detX = input->getMouseX();
-
-		float newH = rectW * ((float)HEIGHT / (float)WIDTH);
-		detY = newH + zoomPosBegin.y;
-	}
-	else {
-		float newW = rectH * ((float)WIDTH / (float)HEIGHT);
-		detX = newW + zoomPosBegin.x;
-
-		detY = input->getMouseY();
+		leftMouseDrag = false;
 	}
 }
 
-void InteractMandel::WASDTraversePlane()
+void InteractMandel::DragViewWindow()
 {
-	// Float values to in/decrement view region.
-	float vertical = 0.000;
-	float horizontal = 0.000;
+	if (input->isRightMouseDown()) {
+		if (!rightMouseDrag) {
+			// Store mouse position upon beginning of drag.
+			dragPosPrev.x = (float)input->getMouseX();
+			dragPosPrev.y = (float)input->getMouseY();
 
-	if (input->isKeyDown(sf::Keyboard::W)) {
-		vertical = 0.010001f;
+			rightMouseDrag = true;
+		}
+		// Upon mouse movement...
+		if (input->getMouseX() != dragPosPrev.x && input->getMouseY() != dragPosPrev.y) {
 
-		// Should scale vertical to suit zoom.
-		// Opportunity with automatic iterations?
-	}
-	if (input->isKeyDown(sf::Keyboard::S)) {
-		vertical = -0.010001f;
-	}
-	top += vertical;
-	bottom += vertical;
+			// Update the image centre with the difference
+			// in current to previous mouse position.
+			float centreX = (WIDTH / 2.0f) - ((float)input->getMouseX() - dragPosPrev.x);
+			float centreY = (HEIGHT / 2.0f) - ((float)input->getMouseY() - dragPosPrev.y);
 
-	if (input->isKeyDown(sf::Keyboard::A)) {
-		horizontal = -0.010001f;
+			// Future mouse coordinates will be compared against
+			// the current position.
+			dragPosPrev.x = (float)input->getMouseX();
+			dragPosPrev.y = (float)input->getMouseY();
+
+			// Apply recentring.
+			TransformImage(centreX, centreY, 1.0f);
+		}
 	}
-	if (input->isKeyDown(sf::Keyboard::D)) {
-		horizontal = 0.010001f;
-	}
-	left += horizontal;
-	right += horizontal;
-	// Will the above structure allow for tidy further
-	// implementation? Or is it daft and over complicated?
+	else if (rightMouseDrag) { rightMouseDrag = false; }
 }
 
-void InteractMandel::ERZoomReset()
+void InteractMandel::TransformImage(float x, float y, float z)
 {
-	// Reset view region to full, upon Z key pressed.
-	if (input->isKeyDown(sf::Keyboard::Z)) {
-		zoom = 1.0f;
+	// Align the centre point of the drawn rectangle
+	// with the centre of the complex plane.
 
-		left = -2.0f; right = 2.0f;
-		top = 1.125; bottom = -1.125;
-	}
+	float real = left + (right - left) * x / WIDTH;
+	float imaginary = bottom + (top - bottom) * y / HEIGHT;
 
-	if (input->isKeyDown(sf::Keyboard::R)) {
-		zoom += 0.010001f;
-	}
-	if (input->isKeyDown(sf::Keyboard::E)) {
-		zoom -= 0.010001f;
-	}
+	// Apply transformation to the Mandelbrot frame.
+	float leftTemp = real - (right - left) / 2 / z;
+	right = real + (right - left) / 2 / z;
+	left = leftTemp;
 
-	// WASD movement could depend on zoom, though
-	// use of the zoomWindow would disregard any effect.
-	
-	// Some sort of variable tracks depth, required as
-	// multiplier for WASD, zoom AND iterations.
+	float bottomTemp = imaginary - (top - bottom) / 2 / z;
+	top = imaginary + (top - bottom) / 2 / z;
+	bottom = bottomTemp;
 }
 
 void InteractMandel::Update(float frame_time)
 {
 	// Compute Mandelbrot.
-	mandel.ComputeMandelbrot(left, right, top, bottom, zoom);
+	mandel.ComputeMandelbrot(left, right, top, bottom, scale);
 	// -2.0, 1.0, 1.125, -1.125
 	// -0.751085, -0.734975, 0.118378, 0.134488
 
@@ -178,7 +161,7 @@ void InteractMandel::Update(float frame_time)
 
 void InteractMandel::Render()
 {
-	// Render Mandelbrot (and other) graphic(s).
+	// Render Mandelbrot and zoomWindow graphic.
 	//window->clear();
 
 	window->draw(mandelSprite);

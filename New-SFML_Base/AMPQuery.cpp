@@ -1,6 +1,6 @@
 #include "AMPQuery.h"
 
-// Using 'iostream' functionality.
+// Using iostream functionality.
 using std::cout;
 using std::endl;
 
@@ -17,29 +17,27 @@ void AMPQuery::ReportAccelerator(const accelerator a)
 		<< endl << "       supports_double_precision         = " << bs[a.supports_double_precision]
 		<< endl << "       supports_limited_double_precision = " << bs[a.supports_limited_double_precision]
 		<< endl;
-} // report_accelerator
+} // Write report for specified accelerator.
 
 void AMPQuery::ListAccelerators()
 {
 	// Get all available accelerators and store in a vector for access to details.
 	std::vector<accelerator> accls = accelerator::get_all();
 
-	// Iterates over all accelerators and prints characteristics.
+	// Iterate over all accelerators and print characteristics.
 	for (unsigned i = 0; i < accls.size(); i++)
 	{
 		accelerator a = accls[i];
 		ReportAccelerator(a);
-		//if ((a.dedicated_memory > 0) & (a.dedicated_memory < 0.5*(1024.0f * 1024.0f)))
-		//accelerator::set_default(a.device_path);
 	}
 
-	//accelerator::set_default(accls[2].device_path);
 	accelerator acc = accelerator(accelerator::default_accelerator);
 	std::wcout << " default acc = " << acc.description << endl;
 
-} // list_accelerators
+} // List accelerators.
 
 
+// Notify user on accelerator availability and write report if required.
 void AMPQuery::QueryAMPSupport()
 {
 	std::vector<accelerator> accls = accelerator::get_all();
@@ -52,4 +50,4 @@ void AMPQuery::QueryAMPSupport()
 		cout << "Accelerators found that are compatible with C++ AMP" << std::endl;
 		ListAccelerators();
 	}
-} // query_AMP_support
+}

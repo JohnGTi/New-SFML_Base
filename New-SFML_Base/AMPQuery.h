@@ -1,5 +1,7 @@
 #pragma once
 
+// (Falconer, R(2021) [2]) \\
+
 #include "Mandelbrot.h"
 
 #include <iomanip>
@@ -21,5 +23,3 @@ public:
 	// Query if AMP accelerator exists on hardware.
 	void QueryAMPSupport();
 };
-
-// CITE : SOURCE LAB FOR QUERY AND AUTHOR.

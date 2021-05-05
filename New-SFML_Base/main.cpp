@@ -1,9 +1,16 @@
-#include "Framework/AudioManager.h"
-#include "Framework/GameState.h"
+// [1] Robertson, P 2020, GitHub template repository for CMP105 (https://github.com/Abertay-University-SDI/CMP105_W1). IEEE, (CMP105_W1/Week1/CMP105App/Framework/).
+//	^- 'windowProcess()' organisation and Input Framework.
+
+// [2] Falconer, R 2021, Week 9 CPP file for CMP202 (https://mylearningspace.abertay.ac.uk/d2l/le/content/17327/viewContent/344998/View). IEEE, 'reductionBB.cpp'.
+//	^- 'AMPQuery' functions to query AMP for available accelerators.
+
+
+// *** \\
+
 
 #include "InteractMandel.h"
 
-void windowProcess(sf::RenderWindow* window, Input* input) {
+void windowProcess(sf::RenderWindow* window, Input* input) { // [1]
 	// Handle window events.
 	sf::Event event;
 	while (window->pollEvent(event)) {
@@ -49,7 +56,7 @@ void windowProcess(sf::RenderWindow* window, Input* input) {
 
 int main() {
 	//Create the window
-	sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "MandelApp"); // 1920, 1200
+	sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "MandelApp");
 
 	// Initialise input object.
 	Input input;
@@ -58,6 +65,7 @@ int main() {
 	sf::Clock clock;
 	float deltaTime;
 
+	// Create an interface for Mandelbrot interaction.
 	InteractMandel mandelMain(&window, &input);
 
 	// Write accelerator report to console.
@@ -66,7 +74,7 @@ int main() {
 
 	while (window.isOpen()) {
 		//Process window events
-		windowProcess(&window, &input);
+		windowProcess(&window, &input); // [1]
 
 		// Calculate delta time. How much time has passed since
 		// it was last calculated (in seconds) and restart the clock.
@@ -84,5 +92,3 @@ int main() {
 
 	return 0;
 }
-
-// CITE : PAUL ROBERTSON? - GITHUB SFML PROJECT AND FRAMEWORK TEMPLATE.

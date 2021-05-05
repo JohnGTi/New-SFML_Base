@@ -155,13 +155,13 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 	// Local pointer to the globally declared image data.
 	uint32_t* pImage = &(image[0][0]);
 
-	uint32_t ipTemp = 0xff0000;
+	/*uint32_t ipTemp = 0xff0000;
 	std::cout << "ipTemp = " << ipTemp << ";\n";
 	float fpTemp = 0.000904706;
 	float pixelBlur = ipTemp * fpTemp;
 	std::cout << "0xff0000 * 0.000904706 = " << pixelBlur << ";\n";
 	uint32_t finTemp = pixelBlur;
-	std::cout << "finTemp = pixelBlur... " << finTemp << ";\n";
+	std::cout << "finTemp = pixelBlur... " << finTemp << ";\n";*/
 
 	// array_view object will permit the image data to be available
 	// on the CPU and GPU when needed.
@@ -194,7 +194,8 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 			OwnComplex c;
 			c.SetXY(
 				(left + (x * (right - left) / WIDTH)) / zoom,
-				(top + (y * (bottom - top) / HEIGHT)) / zoom
+				//(top + (y * (bottom - top) / HEIGHT)) / zoom
+				(bottom + (y * (top - bottom) / HEIGHT)) / zoom
 			);
 
 			// Start off z at (0, 0).

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "AMPQuery.h"
-#include "Framework/Input.h"
+#include "Framework/Input.h"  // (Robertson, P(2020) [1])
 
 class InteractMandel
 {
@@ -10,24 +10,36 @@ private:
 	sf::RenderWindow* window;
 	Input* input;
 
+	// A mandelbrot class to communicate with.
 	Mandelbrot mandel;
 
+	// Texture and sprite for image data to
+	// be written to.
 	sf::Texture mandelTexture;
 	sf::Sprite mandelSprite;
 
+	// Zoom window shape and position data.
 	sf::RectangleShape zoomWindow;
-	sf::Vector2f zoomPosBegin, zoomPosEnd;
+	sf::Vector2f zoomPosBegin;
+	sf::Vector2f dragPosPrev;
 
-	void WASDTraversePlane();
 	void ERZoomReset();
-	void MaintainAspectRatio();
+	void ComputeZoomWindow();
+	void DragViewWindow();
+	void TransformImage(float x, float y, float z);
 
-	bool mouseDrag;
-	float left, right, zoom;
+	// Additional member variables.
+	bool leftMouseDrag;
+	bool rightMouseDrag;
+
+	float scale;
+	float left, right;
 	float top, bottom;
-	float detX, detY;
 
 public:
+	// Specified constructor and application core
+	// loop functions.
+
 	InteractMandel(sf::RenderWindow* hwnd, Input* in);
 
 	void HandleInput(float frame_time);
