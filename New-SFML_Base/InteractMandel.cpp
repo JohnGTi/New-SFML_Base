@@ -4,7 +4,7 @@ InteractMandel::InteractMandel(sf::RenderWindow* hwnd, Input* in)
 	: leftMouseDrag(false),
 	rightMouseDrag(false),
 	left(-2.0f),
-	right(2.0f),
+	right(1.0f), // 1.0f
 	top(1.125f),
 	bottom(-1.125f),
 	scale(1.0f)
@@ -38,6 +38,7 @@ void InteractMandel::HandleInput(float frame_time)
 	ERZoomReset();
 	ComputeZoomWindow();
 	DragViewWindow();
+	ControlIterations();
 }
 
 void InteractMandel::ERZoomReset()
@@ -46,8 +47,13 @@ void InteractMandel::ERZoomReset()
 	if (input->isKeyDown(sf::Keyboard::Z)) {
 		scale = 1.0f;
 
-		left = -2.0f; right = 2.0f;
+		left = -2.0f; right = 1.0f; // 2.0f
 		top = 1.125; bottom = -1.125;
+	}
+
+	// Scale back - a zoom 'undo.'
+	if (input->isRightMousePressed()) {
+		TransformImage((WIDTH / 2.0f), (HEIGHT / 2.0f), 1.0f / 5.0f);
 	}
 
 	/*if (input->isKeyDown(sf::Keyboard::R)) {
@@ -97,7 +103,7 @@ void InteractMandel::ComputeZoomWindow()
 
 void InteractMandel::DragViewWindow()
 {
-	if (input->isRightMouseDown()) {
+	if (input->isMiddleMouseDown()) {
 		if (!rightMouseDrag) {
 			// Store mouse position upon beginning of drag.
 			dragPosPrev.x = (float)input->getMouseX();
@@ -141,6 +147,36 @@ void InteractMandel::TransformImage(float x, float y, float z)
 	float bottomTemp = imaginary - (top - bottom) / 2 / z;
 	top = imaginary + (top - bottom) / 2 / z;
 	bottom = bottomTemp;
+}
+
+void InteractMandel::ControlIterations()
+{
+	// Increase the maximum iterations with a forward* scroll.
+
+	if (input->isVerticalWheelScrolling()) {
+		if (input->getScrollDelta() > 0.0f) {
+
+			mandel.setMaxIterations(mandel.getMaxIterations() * 2);
+		}
+		else {
+			// Scrolling in the opposite direction halves the
+			// maximum iterations.
+			mandel.setMaxIterations(mandel.getMaxIterations() / 2);
+		}
+
+		// Prevent MAX_ITERATIONS from reducing past O N E.
+		if (mandel.getMaxIterations() < 1) { mandel.setMaxIterations(1); }
+	}
+	// *depends on a particular mouse's scroll direction.
+
+	// Reset to default iterations threshold.
+	if (input->isKeyDown(sf::Keyboard::Q)) {
+
+		mandel.setMaxIterations(500);
+	}
+
+	// Computation struggles with such a sharp increase in max iterations.
+	// ONLY COMPUTE MANDELBROT WHEN REQUIRED.
 }
 
 void InteractMandel::Update(float frame_time)

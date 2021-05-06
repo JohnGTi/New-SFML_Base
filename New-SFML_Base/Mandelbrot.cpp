@@ -21,7 +21,7 @@ using namespace concurrency;
 // The number of times to iterate before we assume that a point isn't in the
 // Mandelbrot set.
 // (You may need to turn this up if you zoom further into the set.)
-const int MAX_ITERATIONS = 500;
+//const int MAX_ITERATIONS = 500;
 
 // The image data.
 // Each pixel is represented as 0xRRGGBB.
@@ -172,6 +172,9 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 	// calculations are done on the GPU.
 	a.discard_data();
 
+	// Local copy, for restricted use, of MAX_ITERATIONS.
+	unsigned int maxIterations = MAX_ITERATIONS;
+
 	// Define the tile size.
 	const int TS = 8; // 32
 
@@ -204,7 +207,7 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 			// Iterate z = z^2 + c until z moves more than 2 units
 			// away from (0, 0), or we've iterated too many times.
 			unsigned int iterations = 0;
-			while (z.Absolute() < 2.0 && iterations < MAX_ITERATIONS)
+			while (z.Absolute() < 2.0 && iterations < maxIterations)
 			{
 				//z = (z * z) + c;
 				z.Multiply(z);
@@ -213,7 +216,7 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 				++iterations;
 			}
 
-			if (iterations == MAX_ITERATIONS)
+			if (iterations == maxIterations)
 			{
 				// z didn't escape from the circle.
 				// This point is in the Mandelbrot set.
@@ -239,6 +242,11 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 	// Compute the difference between the two times in milliseconds
 	auto time_taken = duration_cast<nanoseconds>(end - start).count();
 	//std::cout << "AMP, non tiled, takes : " << time_taken << " ns." << endl;
+}
+
+void Mandelbrot::setMaxIterations(float iterations)
+{
+	MAX_ITERATIONS = iterations;
 }
 
 /*// Compute Mandelbrot here i.e. Mandelbrot kernel/shader...

@@ -5,8 +5,11 @@ Input::Input()
 	// set default values
 	mouse.left = MouseState::UP;
 	mouse.right = MouseState::UP;
+	mouse.middle = MouseState::UP;
+	mouse.vertical = MouseState::UP;
 	mouse.x = 0;
 	mouse.y = 0;
+	scrollDelta = 0.0f;
 }
 
 void Input::setKeyDown(int key)
@@ -61,6 +64,15 @@ void Input::update()
 	{
 		mouse.right = MouseState::UP;
 	}
+
+	if (mouse.middle == MouseState::PRESSED)
+	{
+		mouse.middle = MouseState::UP;
+	}
+	if (mouse.vertical == MouseState::DOWN)
+	{
+		mouse.vertical = MouseState::UP;
+	} scrollDelta = 0.0f;
 }
 
 void Input::setMouseX(int lx)
@@ -135,3 +147,45 @@ bool Input::isRightMousePressed()
 	return false;
 }
 
+// Hello x
+void Input::setMiddleMouse(MouseState state)
+{
+	mouse.middle = state;
+}
+bool Input::isMiddleMouseDown()
+{
+	if (mouse.middle == MouseState::DOWN || mouse.middle == MouseState::PRESSED)
+	{
+		return true;
+	}
+	return false;
+}
+
+bool Input::isMiddleMousePressed()
+{
+	if (mouse.middle == MouseState::DOWN || mouse.middle == MouseState::PRESSED)
+	{
+		mouse.middle = MouseState::PRESSED;
+		return true;
+	}
+	return false;
+}
+
+void Input::setMouseVerticalWheel(MouseState state, float delta)
+{
+	mouse.vertical = state;
+	scrollDelta = delta;
+}
+bool Input::isVerticalWheelScrolling()
+{
+	if (mouse.vertical == MouseState::DOWN)
+	{
+		return true;
+	}
+	return false;
+}
+
+float Input::getScrollDelta()
+{
+	return scrollDelta;
+}

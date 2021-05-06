@@ -39,6 +39,9 @@ void windowProcess(sf::RenderWindow* window, Input* input) { // [1]
 			else if (event.mouseButton.button == sf::Mouse::Right) {
 				input->setRightMouse(Input::MouseState::DOWN);
 			}
+			else if (event.mouseButton.button == sf::Mouse::Middle) {
+				input->setMiddleMouse(Input::MouseState::DOWN);
+			}
 			break;
 		case sf::Event::MouseButtonReleased:
 			if (event.mouseButton.button == sf::Mouse::Left) {
@@ -46,6 +49,15 @@ void windowProcess(sf::RenderWindow* window, Input* input) { // [1]
 			}
 			else if (event.mouseButton.button == sf::Mouse::Right) {
 				input->setRightMouse(Input::MouseState::UP);
+			}
+			else if (event.mouseButton.button == sf::Mouse::Middle) {
+				input->setMiddleMouse(Input::MouseState::UP);
+			}
+			break;
+		case sf::Event::MouseWheelScrolled:
+			if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
+				input->setMouseVerticalWheel(Input::MouseState::DOWN,
+					event.mouseWheelScroll.delta);
 			}
 			break;
 		default: // Don't handle other events.

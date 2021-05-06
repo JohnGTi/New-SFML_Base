@@ -27,6 +27,7 @@ private:
 	void ComputeZoomWindow();
 	void DragViewWindow();
 	void TransformImage(float x, float y, float z);
+	void ControlIterations();
 
 	// Additional member variables.
 	bool leftMouseDrag;

@@ -12,12 +12,12 @@ public:
 	enum class MouseState { UP, DOWN, PRESSED };
 private:
 	// Mouse structure, store mouse relevant information
-	
+	float scrollDelta;
 
 	struct Mouse
 	{
 		int x, y;
-		MouseState left, right;
+		MouseState left, right, middle, vertical;
 	};
 	
 
@@ -42,6 +42,15 @@ public:
 	void setRightMouse(MouseState state);
 	bool isRightMouseDown();
 	bool isRightMousePressed();
+
+	// Middle mouse button/scroll functionality implemented by Gabriel x
+	void setMiddleMouse(MouseState state);
+	bool isMiddleMouseDown();
+	bool isMiddleMousePressed();
+
+	void setMouseVerticalWheel(MouseState state, float delta);
+	bool isVerticalWheelScrolling();
+	float getScrollDelta();
 	
 private:
 	// Array of booleans representing keys (pressed = true, released = false)

@@ -24,12 +24,18 @@ class Mandelbrot
 private:
 	//sf::Uint8* pixels = new sf::Uint8[1200 * 1920 * 4];
 	uint8_t* pixels = new uint8_t[HEIGHT * WIDTH * 4]; // 1200 * 1920 * 4
-
 	/// ^^^ - Uint8* CAN point to a uint8_t (^^ALSO CLEAN UP - *n e w*).
+
+	// The number of times to iterate before we assume that a point isn't in the
+	// Mandelbrot set. A higher maximum value results in a higher quality image.
+	int MAX_ITERATIONS = 500;
 
 public:
 	void ComputeMandelbrot(float left, float right,
 		float top, float bottom, float zoom = 1.0f);
+
+	int getMaxIterations() { return MAX_ITERATIONS; };
+	void setMaxIterations(float iterations);
 
 	void WriteTga(const char* filename);
 	sf::Uint8* GetMandelPixels();
