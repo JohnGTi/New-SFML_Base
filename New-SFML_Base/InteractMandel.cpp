@@ -8,6 +8,7 @@ InteractMandel::InteractMandel(sf::RenderWindow* hwnd, Input* in)
 	right(1.0f), // 2.0f
 	top(1.125f),
 	bottom(-1.125f),
+	sample(0),
 	blurApplied(false)
 {
 	window = hwnd;
@@ -240,6 +241,25 @@ void InteractMandel::ControlIterations()
 
 void InteractMandel::Update(float frame_time)
 {
+	// Compute the mandelbrot image for the explicit purpose
+	//  of recording timing data.
+
+	if (sample < SAMPLE_SIZE) {
+
+		// Compute Mandelbrot - update performance data.
+		mandel.ComputeMandelbrot(left, right, top, bottom, blurApplied, sample);
+
+		++sample;
+
+		// Upon completion of sample timings,
+		// print raw results.
+		if (sample == SAMPLE_SIZE) {
+
+			mandel.PrintResults();
+		}
+	}
+
+
 	// Update texture from array of pixels.
 	mandelTexture.update(mandel.GetMandelPixels());
 

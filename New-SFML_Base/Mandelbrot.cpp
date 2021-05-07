@@ -48,7 +48,7 @@ void Mandelbrot::WriteTga(const char* filename)
 	};
 	outfile.write((const char*)header, 18);
 
-	for (int y = 0; y < HEIGHT; ++y)
+	for (int y = HEIGHT - 1; y > -1; --y)
 	{
 		for (int x = 0; x < WIDTH; ++x)
 		{
@@ -98,7 +98,7 @@ sf::Uint8* Mandelbrot::GetMandelPixels()
 // Render the Mandelbrot set into the image array [3].
 // The parameters specify the region on the complex plane to plot.
 
-void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bottom, bool blur)
+void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bottom, bool blur, int sample)
 {
 	// Local pointer to the globally declared image data.
 	uint32_t* pImage = &(image[0][0]);
@@ -184,7 +184,10 @@ void Mandelbrot::ComputeMandelbrot(float left, float right, float top, float bot
 	// Compute the difference between the two times in milliseconds
 	auto time_taken = duration_cast<nanoseconds>(end - start).count();
 
-	std::cout << "AMP, non tiled, takes : " << time_taken << " ns." << endl;
+	if (sample < SAMPLE_SIZE && sample != -1) {
+		results.at(sample) = time_taken;
+		std::cout << "AMP, TS " << TS << ", sample " << sample << ", takes : " << time_taken << " ns." << endl;
+	}
 
 
 
@@ -220,6 +223,14 @@ void Mandelbrot::ApplyBlur()
 	// calculations are done on the GPU.
 	avImageOut.discard_data();
 
+
+
+	// For the horizontal pass, the lambda function was separated from
+	// the parallel_for_each call so that - if a solution to vary the
+	// tile size at runtime was found - both passes could use the same lambda.
+
+
+
 	auto singleBlurPass = [=](tiled_index<WIDTH, 1> t_idx) restrict(amp) {
 		// Local copy of global index.
 		index<2> idx = t_idx.global;
@@ -230,7 +241,7 @@ void Mandelbrot::ApplyBlur()
 		t_idx.barrier.wait();
 
 		// Location of the pixel to be operated on.
-		int texturePosX = idx[0] - (KERNEL_SIZE / 2);
+		unsigned int texturePosX = idx[0] - (KERNEL_SIZE / 2);
 
 		// Temporary colour/channel values.
 		float red = 0.0f, green = 0.0f, blue = 0.0f;
@@ -261,13 +272,14 @@ void Mandelbrot::ApplyBlur()
 		index<2> idx = t_idx.global;
 
 		// Load array_view contents into shared memory.
-		tile_static uint32_t verticalPoints[HEIGHT]; // uint32_t
+		tile_static uint32_t verticalPoints[HEIGHT];
 		verticalPoints[idx[1]] = avImageIn[idx];
 		t_idx.barrier.wait();
 
-		// Location of the pixel to be operated on and temp value.
-		int texturePosX = idx[1] - (KERNEL_SIZE / 2);
-		//uint32_t pixelBlur = 0xffffff; // 0xffffff ?? 0x000000
+		// Location of the pixel to be operated on.
+		unsigned int texturePosX = idx[1] - (KERNEL_SIZE / 2);
+
+		// Temporary colour/channel values.
 		float red = 0.0f, green = 0.0f, blue = 0.0f;
 		float pixelBlur = 0.0f;
 
@@ -291,6 +303,18 @@ void Mandelbrot::setMaxIterations(float iterations)
 	MAX_ITERATIONS = iterations;
 }
 
+void Mandelbrot::PrintResults()
+{
+	// After a double line break, print results.
+	std::cout << std::endl << std::endl;
+
+	for (const auto &ns : results) {
+
+		std::cout << ns << std::endl;
+	}
+
+	std::cout << "\n\nPerformance measurements taken, and available to copy.\n";
+}
 
 Mandelbrot::~Mandelbrot()
 {

@@ -36,6 +36,8 @@ private:
 	float left, right;
 	float top, bottom;
 
+	int sample;
+
 	bool blurApplied;
 
 public:
