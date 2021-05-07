@@ -1,19 +1,20 @@
 #include "InteractMandel.h"
+#include <cmath>
 
 InteractMandel::InteractMandel(sf::RenderWindow* hwnd, Input* in)
 	: leftMouseDrag(false),
 	rightMouseDrag(false),
 	left(-2.0f),
-	right(1.0f), // 1.0f
+	right(1.0f), // 2.0f
 	top(1.125f),
 	bottom(-1.125f),
-	scale(1.0f)
+	blurApplied(false)
 {
 	window = hwnd;
 	input = in;
 
 	// Create an empty texture.
-	if (!mandelTexture.create(WIDTH, HEIGHT)) { // 1920, 1200
+	if (!mandelTexture.create(WIDTH, HEIGHT)) {
 		std::cout << "Failed to create mandelTexture.";
 		abort();
 	}
@@ -22,6 +23,9 @@ InteractMandel::InteractMandel(sf::RenderWindow* hwnd, Input* in)
 	zoomWindow.setFillColor(sf::Color::Transparent);
 	zoomWindow.setOutlineColor(sf::Color::White);
 	zoomWindow.setOutlineThickness(-3.0f);
+
+	// Compute Mandelbrot - initialise image data.
+	mandel.ComputeMandelbrot(left, right, top, bottom);
 }
 
 void InteractMandel::HandleInput(float frame_time)
@@ -45,17 +49,42 @@ void InteractMandel::ERZoomReset()
 {
 	// Reset view region to full, upon Z key pressed.
 	if (input->isKeyDown(sf::Keyboard::Z)) {
-		scale = 1.0f;
+
+		// Press should not be mistaken as a hold.
+		input->setKeyUp(sf::Keyboard::Z);
 
 		left = -2.0f; right = 1.0f; // 2.0f
 		top = 1.125; bottom = -1.125;
+
+		// Compute Mandelbrot - update image data.
+		mandel.ComputeMandelbrot(left, right, top, bottom, blurApplied);
 	}
 
-	// Scale back - a zoom 'undo.'
+	// Scale back - previously, a zoom 'undo.'
 	if (input->isRightMousePressed()) {
 		TransformImage((WIDTH / 2.0f), (HEIGHT / 2.0f), 1.0f / 5.0f);
+
+		// Compute Mandelbrot - update image data.
+		mandel.ComputeMandelbrot(left, right, top, bottom, blurApplied);
 	}
 
+	// Toggle image blur effect on C press.
+	if (input->isKeyDown(sf::Keyboard::C)) {
+		
+		// Press should not be mistaken as a hold.
+		input->setKeyUp(sf::Keyboard::C);
+
+		blurApplied = !blurApplied;
+
+		if (blurApplied) {
+			// Compute blur - update image data.
+			mandel.ApplyBlur();
+		}
+		else {
+			// Compute Mandelbrot - overwrite image data.
+			mandel.ComputeMandelbrot(left, right, top, bottom);
+		}
+	}
 	/*if (input->isKeyDown(sf::Keyboard::R)) {
 		zoom += 0.010001f;
 	}
@@ -90,12 +119,30 @@ void InteractMandel::ComputeZoomWindow()
 
 	}
 	else if (leftMouseDrag) {
-		// Calculate centre point of the drawn rectangle.
-		int centreX = ((input->getMouseX() - zoomPosBegin.x) / 2 + zoomPosBegin.x);
-		int centreY = ((input->getMouseY() - zoomPosBegin.y) / 2 + zoomPosBegin.y);
+		// Local zoom window dimensions and scale.
+		float windowWidth = input->getMouseX() - zoomPosBegin.x;
+		float windowHeight = input->getMouseY() - zoomPosBegin.y;
 
-		TransformImage(centreX, centreY, 5.0f);
+		float SCALE = 1.0f;
+
+		// Calculate centre point of the drawn rectangle.
+		int centreX = (windowWidth / 2 + zoomPosBegin.x);
+		int centreY = (windowHeight / 2 + zoomPosBegin.y);
+
+		// Calculate the scale according to the drawn rectangle.
+		if (windowHeight > windowWidth) {
+			SCALE = WIDTH / windowWidth;
+		}
+		else {
+			SCALE = HEIGHT / windowHeight;
+		}
+		SCALE = std::abs(SCALE);
+
+		TransformImage(centreX, centreY, SCALE);
 		zoomWindow.setSize(sf::Vector2f(0.0f, 0.0f));
+
+		// Compute Mandelbrot - update image data.
+		mandel.ComputeMandelbrot(left, right, top, bottom, blurApplied);
 
 		leftMouseDrag = false;
 	}
@@ -126,6 +173,9 @@ void InteractMandel::DragViewWindow()
 
 			// Apply recentring.
 			TransformImage(centreX, centreY, 1.0f);
+
+			// Compute Mandelbrot - update image data.
+			mandel.ComputeMandelbrot(left, right, top, bottom, blurApplied);
 		}
 	}
 	else if (rightMouseDrag) { rightMouseDrag = false; }
@@ -157,15 +207,21 @@ void InteractMandel::ControlIterations()
 		if (input->getScrollDelta() > 0.0f) {
 
 			mandel.setMaxIterations(mandel.getMaxIterations() * 2);
+
+			// Compute Mandelbrot - update image data.
+			mandel.ComputeMandelbrot(left, right, top, bottom, blurApplied);
 		}
 		else {
 			// Scrolling in the opposite direction halves the
 			// maximum iterations.
 			mandel.setMaxIterations(mandel.getMaxIterations() / 2);
-		}
 
-		// Prevent MAX_ITERATIONS from reducing past O N E.
-		if (mandel.getMaxIterations() < 1) { mandel.setMaxIterations(1); }
+			// Prevent MAX_ITERATIONS from reducing past O N E.
+			if (mandel.getMaxIterations() < 1) { mandel.setMaxIterations(1); }
+
+			// Compute Mandelbrot - update image data.
+			mandel.ComputeMandelbrot(left, right, top, bottom, blurApplied);
+		}
 	}
 	// *depends on a particular mouse's scroll direction.
 
@@ -173,6 +229,9 @@ void InteractMandel::ControlIterations()
 	if (input->isKeyDown(sf::Keyboard::Q)) {
 
 		mandel.setMaxIterations(500);
+
+		// Compute Mandelbrot - update image data.
+		mandel.ComputeMandelbrot(left, right, top, bottom, blurApplied);
 	}
 
 	// Computation struggles with such a sharp increase in max iterations.
@@ -181,13 +240,6 @@ void InteractMandel::ControlIterations()
 
 void InteractMandel::Update(float frame_time)
 {
-	// Compute Mandelbrot.
-	mandel.ComputeMandelbrot(left, right, top, bottom, scale);
-	// -2.0, 1.0, 1.125, -1.125
-	// -0.751085, -0.734975, 0.118378, 0.134488
-
-	// ^- ammend to only be called when required.
-
 	// Update texture from array of pixels.
 	mandelTexture.update(mandel.GetMandelPixels());
 
@@ -198,8 +250,6 @@ void InteractMandel::Update(float frame_time)
 void InteractMandel::Render()
 {
 	// Render Mandelbrot and zoomWindow graphic.
-	//window->clear();
-
 	window->draw(mandelSprite);
 	window->draw(zoomWindow);
 

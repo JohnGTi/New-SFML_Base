@@ -4,6 +4,9 @@
 // [2] Falconer, R 2021, Week 9 CPP file for CMP202 (https://mylearningspace.abertay.ac.uk/d2l/le/content/17327/viewContent/344998/View). IEEE, 'reductionBB.cpp'.
 //	^- 'AMPQuery' functions to query AMP for available accelerators.
 
+// [3] Sampson, A 2020, Mandelbrot set example for CMP202 lab (https://mylearningspace.abertay.ac.uk/d2l/le/content/17327/viewContent/227552/View). IEEE, 'mandelbrot.zip'.
+//	^- Mandelbrot::ComputeMandelbrot and WriteTga adapted from the first week's Mandelbrot practical.
+
 
 // *** \\
 

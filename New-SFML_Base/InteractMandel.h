@@ -33,9 +33,10 @@ private:
 	bool leftMouseDrag;
 	bool rightMouseDrag;
 
-	float scale;
 	float left, right;
 	float top, bottom;
+
+	bool blurApplied;
 
 public:
 	// Specified constructor and application core

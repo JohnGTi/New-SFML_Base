@@ -1,5 +1,10 @@
 #pragma once
 
+
+// A custom Complex number class is required as the Complex
+// type is not available in the Concurrency namespace.
+
+
 class OwnComplex
 {
 private:
