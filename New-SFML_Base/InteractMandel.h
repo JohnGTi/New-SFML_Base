@@ -31,7 +31,7 @@ private:
 
 	// Additional member variables.
 	bool leftMouseDrag;
-	bool rightMouseDrag;
+	bool middleMouseDrag;
 
 	float left, right;
 	float top, bottom;

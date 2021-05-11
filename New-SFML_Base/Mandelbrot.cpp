@@ -319,7 +319,8 @@ void Mandelbrot::PrintResults()
 Mandelbrot::~Mandelbrot()
 {
 	// Delete uint8_t array of pixels.
-	delete pixels;
+	delete[] pixels;
+	pixels = NULL;
 
 	/*for (uint8_t* p : pixels) {
 

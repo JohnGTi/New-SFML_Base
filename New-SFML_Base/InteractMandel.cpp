@@ -3,7 +3,7 @@
 
 InteractMandel::InteractMandel(sf::RenderWindow* hwnd, Input* in)
 	: leftMouseDrag(false),
-	rightMouseDrag(false),
+	middleMouseDrag(false),
 	left(-2.0f),
 	right(1.0f), // 2.0f
 	top(1.125f),
@@ -152,12 +152,12 @@ void InteractMandel::ComputeZoomWindow()
 void InteractMandel::DragViewWindow()
 {
 	if (input->isMiddleMouseDown()) {
-		if (!rightMouseDrag) {
+		if (!middleMouseDrag) {
 			// Store mouse position upon beginning of drag.
 			dragPosPrev.x = (float)input->getMouseX();
 			dragPosPrev.y = (float)input->getMouseY();
 
-			rightMouseDrag = true;
+			middleMouseDrag = true;
 		}
 		// Upon mouse movement...
 		if (input->getMouseX() != dragPosPrev.x && input->getMouseY() != dragPosPrev.y) {
@@ -179,7 +179,7 @@ void InteractMandel::DragViewWindow()
 			mandel.ComputeMandelbrot(left, right, top, bottom, blurApplied);
 		}
 	}
-	else if (rightMouseDrag) { rightMouseDrag = false; }
+	else if (middleMouseDrag) { middleMouseDrag = false; }
 }
 
 void InteractMandel::TransformImage(float x, float y, float z)
